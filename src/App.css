@@ -1,38 +1,40 @@
-.App {
-  text-align: center;
+.line.active {
+  background-color: #e4f2ff;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.token-keyword {
+  color: #8959a8;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.token-number {
+  color: #f5871f;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+.token-string {
+  color: #718c00;
 }
 
-.App-link {
-  color: #61dafb;
+.token-flag {
+  color: #eab700;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.token-reference {
+  color: #3e999f;
+  cursor: pointer;
+}
+
+.token-reference:hover {
+  text-decoration: underline;
+}
+
+.token-sign {
+  color: #4271ae;
+}
+
+.token-separator {
+  color: #8e908c;
+}
+
+#token-unknown {
+  color: #4d4d4c;
 }
