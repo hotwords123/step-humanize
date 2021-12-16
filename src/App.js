@@ -180,6 +180,19 @@ class App extends React.PureComponent {
 }
 
 class TreeNode extends React.PureComponent {
+  constructor(props) {
+    super(props);
+    this.state = {
+      collapsed: false
+    };
+
+    this.toggleHandler = this.toggleHandler.bind(this);
+  }
+
+  toggleHandler() {
+    this.setState({ collapsed: !this.state.collapsed });
+  }
+
   render() {
     /** @type {App} */
     const owner = this.props.owner;
@@ -188,8 +201,11 @@ class TreeNode extends React.PureComponent {
     const depth = this.props.depth;
     return (
       <div className="TreeNode">
-        <FileLine ref={owner.lineChildren[node.line.index]} line={node.line} onNavigate={owner.navigateHandler} />
-        <div className={`TreeNode-children depth-${depth % 7}`}>
+        <div className="TreeNode-line">
+          <div style={{ fontFamily: "Consolas", float: "left" }} onClick={this.toggleHandler}>{this.state.collapsed ? '+' : '-'}</div>
+          <FileLine ref={owner.lineChildren[node.line.index]} line={node.line} onNavigate={owner.navigateHandler} />
+        </div>
+        <div className={`TreeNode-children depth-${depth % 7} ${this.state.collapsed ? 'collapsed' : ''}`}>
           {node.children.map(child =>
             <TreeNode key={child.line.index} owner={owner} node={child} depth={depth + 1} />
           )}
