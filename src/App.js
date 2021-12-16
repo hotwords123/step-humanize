@@ -17,7 +17,9 @@ class App extends React.PureComponent {
     super(props);
     this.state = {
       loaded: false,
-      lines: []
+      lines: [],
+      tree: null,
+      treeView: false
     };
     this.idMap = new Map();
     this.fileInput = React.createRef();
@@ -64,25 +66,102 @@ class App extends React.PureComponent {
   }
 
   /**
+   * @typedef {{
+   *   type: string;
+   *   token: string;
+   * }} TokenData
+   * @typedef {{
+   *   index: number;
+   *   id: number | null;
+   *   text: string;
+   *   tokens: TokenData[];
+   * }} LineData
+   * @typedef {{
+   *   line: LineData;
+   *   children: TreeData[];
+   * }} TreeData
+   */
+
+  /**
    * @param {string} content 
    */
   loadFile(content) {
     try {
       const lines = content.split(/\r?\n/);
       this.idMap.clear();
+
+      /** @type {LineData[]} */
       const parsedLines = lines.map((line, lineNo) => {
         const data = this.parseLine(line);
         if (data.id) this.idMap.set(data.id, lineNo);
-        return data;
+        return { index: lineNo, ...data };
       });
+
       this.lineChildren = new Array(parsedLines.length)
         .fill(null)
         .map(() => React.createRef());
-      this.setState({ loaded: true, lines: parsedLines });
+
+      /** @type {TreeData} */
+      let root = {
+        line: {
+          id: null,
+          text: '#root',
+          tokens: [{ type: 'sign', token: '#root' }]
+        },
+        children: []
+      };
+
+      try {
+        /** @type {TreeData[]} */
+        const nodes = parsedLines.map(line => ({ line, children: [] }));
+        const referenced = new Set();
+
+        parsedLines.forEach((line, lineNo) => {
+          let selfId = line.id;
+          if (selfId === null) return;
+
+          for (let token of line.tokens) {
+            if (token.type === 'reference') {
+              let refId = parseInt(token.token.slice(1));
+              if (refId !== selfId) {
+                nodes[lineNo].children.push(nodes[this.idMap.get(refId)]);
+                referenced.add(refId);
+              }
+            }
+          }
+        });
+
+        // TODO: check circular reference
+        for (const node of nodes) {
+          if (node.line.id && !referenced.has(node.line.id))
+            root.children.push(node);
+        }
+      } catch (err) {
+        console.warn("Failed to build tree:", err);
+      }
+
+      this.setState({ loaded: true, lines: parsedLines, tree: root });
     } catch (err) {
-      this.setState({ loaded: false, lines: [] });
+      this.setState({ loaded: false, lines: [], tree: null });
       console.error(err);
     }
+  }
+
+  renderLinearView() {
+    return (
+      <div>
+        {this.state.lines.map((line, lineNo) =>
+          <FileLine key={lineNo} ref={this.lineChildren[lineNo]} line={line} onNavigate={this.navigateHandler} />
+        )}
+      </div>
+    );
+  }
+
+  renderTreeView() {
+    const root = this.state.tree;
+    if (!root)
+      return <div>Failed to build tree.</div>;
+    return <TreeNode owner={this} node={root} depth={0} />;
   }
 
   render() {
@@ -90,14 +169,31 @@ class App extends React.PureComponent {
       <div className="App">
         <div>
           <input ref={this.fileInput} type="file" onChange={this.fileSelectHandler} />
+          <button onClick={() => this.setState({ treeView: !this.state.treeView })}>
+            {this.state.treeView ? "Tree" : "Linear"}
+          </button>
         </div>
-        {this.state.loaded &&
-          <div>
-            {this.state.lines.map((line, lineNo) =>
-              <FileLine key={lineNo} ref={this.lineChildren[lineNo]} line={line} onNavigate={this.navigateHandler} />
-            )}
-          </div>
-        }
+        {this.state.loaded && (this.state.treeView ? this.renderTreeView() : this.renderLinearView())}
+      </div>
+    );
+  }
+}
+
+class TreeNode extends React.PureComponent {
+  render() {
+    /** @type {App} */
+    const owner = this.props.owner;
+    /** @type {TreeData} */
+    const node = this.props.node;
+    const depth = this.props.depth;
+    return (
+      <div className="TreeNode">
+        <FileLine ref={owner.lineChildren[node.line.index]} line={node.line} onNavigate={owner.navigateHandler} />
+        <div className={`TreeNode-children depth-${depth % 7}`}>
+          {node.children.map(child =>
+            <TreeNode key={child.line.index} owner={owner} node={child} depth={depth + 1} />
+          )}
+        </div>
       </div>
     );
   }

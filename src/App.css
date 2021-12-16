@@ -38,3 +38,39 @@
 #token-unknown {
   color: #4d4d4c;
 }
+
+.TreeNode-children {
+  position: relative;
+  margin-left: 16px;
+}
+
+.TreeNode-children:before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 2px;
+  bottom: 2px;
+  width: 1px;
+}
+
+.TreeNode-children.depth-0:before {
+  background-color: #aaa;
+}
+.TreeNode-children.depth-1:before {
+  background-color: #d99;
+}
+.TreeNode-children.depth-2:before {
+  background-color: #9d9;
+}
+.TreeNode-children.depth-3:before {
+  background-color: #99d;
+}
+.TreeNode-children.depth-4:before {
+  background-color: #9dd;
+}
+.TreeNode-children.depth-5:before {
+  background-color: #d9d;
+}
+.TreeNode-children.depth-6:before {
+  background-color: #dd9;
+}
